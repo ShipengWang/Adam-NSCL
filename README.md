@@ -11,7 +11,10 @@ This is a PyTorch implementation of Adam-NSCL algorithm for continual learning f
 
 Usage
 -
+
+```
 sh scripts_svd/adamnscl.sh
+```
 
 **Requirements**: Python 3.7, PyTorch>=1.5
 
