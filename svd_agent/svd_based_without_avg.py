@@ -97,13 +97,15 @@ class SVDAgent(Agent):
 
         self.task_count += 1
         if self.reg_params:
-            task_param = {}
-            for n, p in self.reg_params.items():
-                task_param[n] = p.clone().detach()
+            if len(self.regularization_terms) == 0:
+                self.regularization_terms = {'importance': defaultdict(
+                    list), 'task_param': defaultdict(list)}
             importance = self.calculate_importance(train_loader)
-            self.regularization_terms[self.task_count] = {
-                'importance': importance, 'task_param': task_param}
-        # Use a new slot to store the task-specific information
+            for n, p in self.reg_params.items():
+                self.regularization_terms['importance'][n].append(
+                    importance[n].unsqueeze(0))
+                self.regularization_terms['task_param'][n].append(
+                    p.unsqueeze(0).clone().detach())
 
     def update_optim_transforms(self, train_loader):
         modules = [m for n, m in self.model.named_modules() if hasattr(
@@ -164,16 +166,16 @@ class SVDAgent(Agent):
     def reg_loss(self):
         self.reg_step += 1
         reg_loss = 0
-        for i, reg_term in self.regularization_terms.items():
-            task_reg_loss = 0
-            importance = reg_term['importance']
-            task_param = reg_term['task_param']
-            for n, p in self.reg_params.items():
-                task_reg_loss += (importance[n] *
-                                  (p - task_param[n]) ** 2).sum()
-            reg_loss += task_reg_loss
-            self.summarywritter.add_scalar(
-                'reg_loss/task_%d' % i, task_reg_loss, self.reg_step)
+        for n, p in self.reg_params.items():
+            importance = torch.cat(
+                self.regularization_terms['importance'][n], dim=0)
+            old_params = torch.cat(
+                self.regularization_terms['task_param'][n], dim=0)
+            new_params = p.unsqueeze(0).expand(old_params.shape)
+            reg_loss += (importance * (new_params - old_params) ** 2).sum()
+
+        self.summarywritter.add_scalar(
+            'reg_loss', reg_loss, self.reg_step)
         return reg_loss
 
 
