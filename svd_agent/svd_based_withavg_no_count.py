@@ -59,7 +59,7 @@ class SVDAgent(Agent):
         fea_params = [p for n, p in self.model.named_parameters(
         ) if not bool(re.match('last', n)) and 'bn' not in n]
         cls_params_all = list(p for n,p in self.model.named_children() if bool(re.match('last', n)))
-        cls_param = list(cls_params_all[str(self.task_count+1)].parameters())
+        cls_params = list(cls_params_all[str(self.task_count+1)].parameters())
         bn_params = [p for n, p in self.model.named_parameters() if 'bn' in n]
         model_optimizer_arg = {'params': [{'params': fea_params, 'svd': True, 'lr': self.svd_lr,
                                             'thres': self.config['svd_thres']},
