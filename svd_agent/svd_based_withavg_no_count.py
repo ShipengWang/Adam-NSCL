@@ -58,10 +58,9 @@ class SVDAgent(Agent):
     def init_model_optimizer(self):
         fea_params = [p for n, p in self.model.named_parameters(
         ) if not bool(re.match('last', n)) and 'bn' not in n]
-#         cls_params_all = list(p for n,p in self.model.named_children() if bool(re.match('last', n)))[0]
-#         cls_params = list(cls_params_all[str(self.task_count+1)].parameters())
-        cls_params = [p for n, p in self.model.named_parameters()
-                      if bool(re.match('last', n))]
+        cls_params_all = list(p for n,p in self.model.named_children() if bool(re.match('last', n)))[0]
+        cls_params = list(cls_params_all[str(self.task_count+1)].parameters())
+        
         bn_params = [p for n, p in self.model.named_parameters() if 'bn' in n]
         model_optimizer_arg = {'params': [{'params': fea_params, 'svd': True, 'lr': self.svd_lr,
                                             'thres': self.config['svd_thres']},
@@ -88,6 +87,7 @@ class SVDAgent(Agent):
     def train_task(self, train_loader, val_loader=None):
         # 1.Learn the parameters for current task
         self.train_model(train_loader, val_loader)
+        self.task_count += 1
 
         if self.reset_model_optimizer:  # Reset model optimizer before learning each task
             self.log('Classifier Optimizer is reset!')
@@ -99,7 +99,7 @@ class SVDAgent(Agent):
             self.update_optim_transforms(train_loader)
             
 
-        self.task_count += 1
+        
         if self.reg_params:
             if len(self.regularization_terms) == 0:
                 self.regularization_terms = {'importance': defaultdict(
