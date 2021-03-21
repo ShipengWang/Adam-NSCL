@@ -56,8 +56,8 @@ class SVDAgent(Agent):
     def init_model_optimizer(self):
         fea_params = [p for n, p in self.model.named_parameters(
         ) if not bool(re.match('last', n)) and 'bn' not in n]
-        cls_params_all = list(p for n,p in self.model.named_children() if bool(re.match('last', n)))[0]
-        cls_params = list(cls_params_all[str(self.task_count+1)].parameters())
+#         cls_params_all = list(p for n,p in self.model.named_children() if bool(re.match('last', n)))[0]
+#         cls_params = list(cls_params_all[str(self.task_count+1)].parameters())
         cls_params = [p for n, p in self.model.named_parameters()
                       if bool(re.match('last', n))]
         bn_params = [p for n, p in self.model.named_parameters() if 'bn' in n]
@@ -91,6 +91,8 @@ class SVDAgent(Agent):
         if self.reset_model_optimizer:  # Reset model optimizer before learning each task
             self.log('Classifier Optimizer is reset!')
             self.svd_lr = self.config['svd_lr']
+            self.init_model_optimizer()
+            self.model.zero_grad()
             
         with torch.no_grad():
             
