@@ -152,6 +152,9 @@ class Agent(nn.Module):
 
     def train_model(self, train_loader, val_loader=None):
         count_cls_step = 0
+        if self.reset_model_optimizer:  # Reset model optimizer before learning each task
+            self.init_model_optimizer()
+            self.model.zero_grad()
 
         for epoch in range(self.config['schedule'][-1]):
 
