@@ -56,8 +56,6 @@ class SVDAgent(Agent):
     def init_model_optimizer(self):
         fea_params = [p for n, p in self.model.named_parameters(
         ) if not bool(re.match('last', n)) and 'bn' not in n]
-#         cls_params_all = list(p for n,p in self.model.named_children() if bool(re.match('last', n)))[0]
-#         cls_params = list(cls_params_all[str(self.task_count+1)].parameters())
         cls_params = [p for n, p in self.model.named_parameters()
                       if bool(re.match('last', n))]
         bn_params = [p for n, p in self.model.named_parameters() if 'bn' in n]
@@ -86,30 +84,26 @@ class SVDAgent(Agent):
     def train_task(self, train_loader, val_loader=None):
         # 1.Learn the parameters for current task
         self.train_model(train_loader, val_loader)
-        self.task_count += 1
 
         if self.reset_model_optimizer:  # Reset model optimizer before learning each task
             self.log('Classifier Optimizer is reset!')
             self.svd_lr = self.config['svd_lr']
             self.init_model_optimizer()
             self.model.zero_grad()
-            
         with torch.no_grad():
             
             self.update_optim_transforms(train_loader)
             
 
-        
+        self.task_count += 1
         if self.reg_params:
-            if len(self.regularization_terms) == 0:
-                self.regularization_terms = {'importance': defaultdict(
-                    list), 'task_param': defaultdict(list)}
-            importance = self.calculate_importance(train_loader)
+            task_param = {}
             for n, p in self.reg_params.items():
-                self.regularization_terms['importance'][n].append(
-                    importance[n].unsqueeze(0))
-                self.regularization_terms['task_param'][n].append(
-                    p.unsqueeze(0).clone().detach())
+                task_param[n] = p.clone().detach()
+            importance = self.calculate_importance(train_loader)
+            self.regularization_terms[self.task_count] = {
+                'importance': importance, 'task_param': task_param}
+        # Use a new slot to store the task-specific information
 
     def update_optim_transforms(self, train_loader):
         modules = [m for n, m in self.model.named_modules() if hasattr(
@@ -170,16 +164,16 @@ class SVDAgent(Agent):
     def reg_loss(self):
         self.reg_step += 1
         reg_loss = 0
-        for n, p in self.reg_params.items():
-            importance = torch.cat(
-                self.regularization_terms['importance'][n], dim=0)
-            old_params = torch.cat(
-                self.regularization_terms['task_param'][n], dim=0)
-            new_params = p.unsqueeze(0).expand(old_params.shape)
-            reg_loss += (importance * (new_params - old_params) ** 2).sum()
-
-        self.summarywritter.add_scalar(
-            'reg_loss', reg_loss, self.reg_step)
+        for i, reg_term in self.regularization_terms.items():
+            task_reg_loss = 0
+            importance = reg_term['importance']
+            task_param = reg_term['task_param']
+            for n, p in self.reg_params.items():
+                task_reg_loss += (importance[n] *
+                                  (p - task_param[n]) ** 2).sum()
+            reg_loss += task_reg_loss
+            self.summarywritter.add_scalar(
+                'reg_loss/task_%d' % i, task_reg_loss, self.reg_step)
         return reg_loss
 
 
