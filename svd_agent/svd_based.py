@@ -7,7 +7,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-class SVDAgentAvgCount(SVDAgent):
+class SVDAgentAvg(SVDAgent):
     def __init__(self, config):
         super().__init__(config)
 
@@ -39,4 +39,4 @@ class SVDAgentAvgCount(SVDAgent):
             self.fea_in[k] = self.fea_in[k] + cov
 
 def svd_based(config):
-    return SVDAgentAvgCount(config)
+    return SVDAgentAvg(config)
