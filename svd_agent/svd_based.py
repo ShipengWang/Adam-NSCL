@@ -1,8 +1,5 @@
 from .svd_agent import SVDAgent
-import optim
 import torch
-import re
-from collections import defaultdict
 import torch.nn as nn
 import torch.nn.functional as F
 
