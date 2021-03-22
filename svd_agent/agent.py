@@ -29,7 +29,6 @@ class Agent(nn.Module):
         # If out_dim is a dict, there is a list of tasks. The model will have a head for each task.
         self.multihead = True if len(
             self.config['out_dim']) > 1 else False  # A convenience flag to indicate multi-head/task
-        self.num_task = len(self.config['out_dim']) if len(self.config['out_dim']) > 1 else None
         self.model = self.create_model()
 
         self.criterion_fn = nn.CrossEntropyLoss()
@@ -153,7 +152,6 @@ class Agent(nn.Module):
 
     def train_model(self, train_loader, val_loader=None):
         count_cls_step = 0
-           
 
         for epoch in range(self.config['schedule'][-1]):
 
