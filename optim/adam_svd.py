@@ -77,7 +77,6 @@ class Adam(Optimizer):
 
                 update = self.get_update(group, grad, p)
                 if svd and len(self.transforms) > 0:
-                    lam = group['lam']
                     if len(update.shape) == 4:
                         # the transpose of the manuscript
                         update_ = torch.mm(update.view(update.size(
