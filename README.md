@@ -7,7 +7,7 @@ This is a PyTorch implementation of Adam-NSCL algorithm for continual learning f
 
 **Email**: wangshipeng8128@stu.xjtu.edu.cn; wangshipeng8128@gmail.com
 
-**Arxiv**:
+**Arxiv**: https://arxiv.org/pdf/2103.07113
 
 Usage
 -
