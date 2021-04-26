@@ -58,11 +58,7 @@ def run(args):
     # Decide split ordering
     task_names = sorted(list(task_output_space.keys()), key=int)
     print('Task order:', task_names)
-    if args.rand_split_order:
-        shuffle(task_names)
-        print('Shuffled task order:', task_names)
 
-    # task_names = ['2', '1', '3', '4', '5']
     acc_table = OrderedDict()
     acc_table_train = OrderedDict()
     if args.offline_training:  # Non-incremental learning / offline_training / measure the upper-bound performance
@@ -162,8 +158,6 @@ def get_args(argv):
                         help="Allow data augmentation during training")
     parser.add_argument('--rand_split', dest='rand_split', default=False, action='store_true',
                         help="Randomize the classes in splits")
-    parser.add_argument('--rand_split_order', dest='rand_split_order', default=False, action='store_true',
-                        help="Randomize the order of splits")
     parser.add_argument('--workers', type=int, default=0,
                         help="#Thread for dataloader")
     parser.add_argument('--batch_size', type=int, default=128)
