@@ -61,65 +61,47 @@ def run(args):
 
     acc_table = OrderedDict()
     acc_table_train = OrderedDict()
-    if args.offline_training:  # Non-incremental learning / offline_training / measure the upper-bound performance
-        task_names = ['All']
-        train_dataset_all = torch.utils.data.ConcatDataset(
-            train_dataset_splits.values())
-        val_dataset_all = torch.utils.data.ConcatDataset(
-            val_dataset_splits.values())
-        train_loader = torch.utils.data.DataLoader(train_dataset_all,
-                                                   batch_size=args.batch_size, shuffle=True, num_workers=args.workers)
-        val_loader = torch.utils.data.DataLoader(val_dataset_all,
-                                                 batch_size=args.batch_size, shuffle=False, num_workers=args.workers)
+    for i in range(len(task_names)):
+        train_name = task_names[i]
+        print('======================', train_name,
+              '=======================')
+        train_loader = torch.utils.data.DataLoader(train_dataset_splits[train_name],
+                                                   batch_size=args.batch_size, shuffle=True,
+                                                   num_workers=args.workers)
+        val_loader = torch.utils.data.DataLoader(val_dataset_splits[train_name],
+                                                 batch_size=args.batch_size, shuffle=False,
+                                                 num_workers=args.workers)
 
-        agent.learn_batch(train_loader, val_loader)
+        if args.incremental_class:
+            agent.add_valid_output_dim(task_output_space[train_name])
 
-        acc_table['All'] = {}
-        acc_table['All']['All'] = agent.validation(val_loader)
+        # Learn
+        agent.train_task(train_loader, val_loader)
+        torch.cuda.empty_cache()
+        # Evaluate
+        acc_table[train_name] = OrderedDict()
+        acc_table_train[train_name] = OrderedDict()
+        for j in range(i + 1):
+            val_name = task_names[j]
 
-    else:  # Incremental learning
-        # Feed data to agent and evaluate agent's performance
-        for i in range(len(task_names)):
-            train_name = task_names[i]
-            print('======================', train_name,
-                  '=======================')
-            train_loader = torch.utils.data.DataLoader(train_dataset_splits[train_name],
-                                                       batch_size=args.batch_size, shuffle=True,
-                                                       num_workers=args.workers)
-            val_loader = torch.utils.data.DataLoader(val_dataset_splits[train_name],
+            print('validation split name:', val_name)
+            val_data = val_dataset_splits[val_name] if not args.eval_on_train_set else train_dataset_splits[
+                val_name]
+            val_loader = torch.utils.data.DataLoader(val_data,
                                                      batch_size=args.batch_size, shuffle=False,
                                                      num_workers=args.workers)
+            acc_table[val_name][train_name] = agent.validation(val_loader)
 
-            if args.incremental_class:
-                agent.add_valid_output_dim(task_output_space[train_name])
-
-            # Learn
-            agent.train_task(train_loader, val_loader)
-            torch.cuda.empty_cache()
-            # Evaluate
-            acc_table[train_name] = OrderedDict()
-            acc_table_train[train_name] = OrderedDict()
-            for j in range(i + 1):
-                val_name = task_names[j]
-
-                print('validation split name:', val_name)
-                val_data = val_dataset_splits[val_name] if not args.eval_on_train_set else train_dataset_splits[
-                    val_name]
-                val_loader = torch.utils.data.DataLoader(val_data,
-                                                         batch_size=args.batch_size, shuffle=False,
-                                                         num_workers=args.workers)
-                acc_table[val_name][train_name] = agent.validation(val_loader)
-
-                print("**************************************************")
-                print('training split name:', val_name)
-                train_data = train_dataset_splits[val_name] if not args.eval_on_train_set else train_dataset_splits[
-                    val_name]
-                train_loader = torch.utils.data.DataLoader(train_data,
-                                                           batch_size=args.batch_size, shuffle=False,
-                                                           num_workers=args.workers)
-                acc_table_train[val_name][train_name] = agent.validation(
-                    train_loader)
-                print("**************************************************")
+            print("**************************************************")
+            print('training split name:', val_name)
+            train_data = train_dataset_splits[val_name] if not args.eval_on_train_set else train_dataset_splits[
+                val_name]
+            train_loader = torch.utils.data.DataLoader(train_data,
+                                                       batch_size=args.batch_size, shuffle=False,
+                                                       num_workers=args.workers)
+            acc_table_train[val_name][train_name] = agent.validation(
+                train_loader)
+            print("**************************************************")
 
     return acc_table, task_names
 
