@@ -1,7 +1,7 @@
 # Adam-NSCL
 This is a PyTorch implementation of Adam-NSCL algorithm for continual learning from our CVPR2021 (oral) paper:
 
-**Title**: Training Networks in Null Space of Feature Covariance for Continual Learning
+**Title**: [Training Networks in Null Space of Feature Covariance for Continual Learning](https://openaccess.thecvf.com/content/CVPR2021/papers/Wang_Training_Networks_in_Null_Space_of_Feature_Covariance_for_Continual_CVPR_2021_paper.pdf)
 
 **Authors**: Shipeng Wang, Xiaorong Li, Jian Sun, Zongben Xu
 
