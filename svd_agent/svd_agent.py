@@ -137,7 +137,6 @@ class SVDAgent(Agent):
                     p += ((self.reg_params[n].grad ** 2)
                           * len(inputs) / len(dataloader))
 
-        self.model.train(mode=mode)
         return importance
 
     def reg_loss(self):
